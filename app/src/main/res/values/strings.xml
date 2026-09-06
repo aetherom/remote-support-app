@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">Remote Support</string>
+    <string name="accessibility_service_description">Lets a trusted person you\'ve shared a pairing code with tap and swipe on your screen to help you, during an active session only. It cannot read your screen content, only perform taps and swipes you can see happening live.</string>
+</resources>
