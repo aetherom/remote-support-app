@@ -99,10 +99,11 @@ class WebRtcManager(
         return factory.createVideoTrack("screen0", source)
     }
 
-    private fun createAndSendOffer() {
+        private fun createAndSendOffer() {
         val constraints = MediaConstraints()
         peerConnection!!.createOffer(object : SdpObserverAdapter() {
-            override fun onCreateSuccess(desc: SessionDescription) {
+            override fun onCreateSuccess(p0: SessionDescription?) {
+                val desc = p0 ?: return
                 peerConnection!!.setLocalDescription(SdpObserverAdapter(), desc)
                 signaling.sendSignal(JSONObject().put("kind", "offer").put("sdp", desc.description))
             }
