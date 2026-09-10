@@ -101,23 +101,36 @@ class WebRtcManager(
 
     private fun createAndSendOffer() {
         val constraints = MediaConstraints()
-        peerConnection!!.createOffer(object : SdpObserver {
+        val observer = object : SdpObserver {
             override fun onCreateSuccess(p0: SessionDescription?) {
                 val desc = p0 ?: return
-                peerConnection!!.setLocalDescription(SdpObserverAdapter(), desc)
+                val setObserver = object : SdpObserver {
+                    override fun onCreateSuccess(p0: SessionDescription?) {}
+                    override fun onSetSuccess() {}
+                    override fun onCreateFailure(p0: String?) {}
+                    override fun onSetFailure(p0: String?) {}
+                }
+                peerConnection!!.setLocalDescription(setObserver, desc)
                 signaling.sendSignal(JSONObject().put("kind", "offer").put("sdp", desc.description))
             }
             override fun onSetSuccess() {}
             override fun onCreateFailure(p0: String?) {}
             override fun onSetFailure(p0: String?) {}
-        }, constraints)
+        }
+        peerConnection!!.createOffer(observer, constraints)
     }
 
     fun onRemoteSignal(payload: JSONObject) {
+        val noopObserver = object : SdpObserver {
+            override fun onCreateSuccess(p0: SessionDescription?) {}
+            override fun onSetSuccess() {}
+            override fun onCreateFailure(p0: String?) {}
+            override fun onSetFailure(p0: String?) {}
+        }
         when (payload.optString("kind")) {
             "answer" -> {
                 val desc = SessionDescription(SessionDescription.Type.ANSWER, payload.getString("sdp"))
-                peerConnection?.setRemoteDescription(SdpObserverAdapter(), desc)
+                peerConnection?.setRemoteDescription(noopObserver, desc)
             }
             "candidate" -> {
                 peerConnection?.addIceCandidate(
@@ -171,11 +184,4 @@ class WebRtcManager(
         screenCapturer?.dispose()
         videoSource?.dispose()
     }
-}
-
-open class SdpObserverAdapter : SdpObserver {
-    override fun onCreateSuccess(p0: SessionDescription?) {}
-    override fun onSetSuccess() {}
-    override fun onCreateFailure(p0: String?) {}
-    override fun onSetFailure(p0: String?) {}
 }
