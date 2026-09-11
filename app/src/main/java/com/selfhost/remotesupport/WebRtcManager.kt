@@ -102,35 +102,29 @@ class WebRtcManager(
     private fun createAndSendOffer() {
         val constraints = MediaConstraints()
         val observer = object : SdpObserver {
-            override fun onCreateSuccess(p0: SessionDescription?) {
-                val desc = p0 ?: return
-                val setObserver = object : SdpObserver {
-                    override fun onCreateSuccess(p0: SessionDescription?) {}
-                    override fun onSetSuccess() {}
-                    override fun onCreateFailure(p0: String?) {}
-                    override fun onSetFailure(p0: String?) {}
-                }
-                peerConnection!!.setLocalDescription(setObserver, desc)
-                signaling.sendSignal(JSONObject().put("kind", "offer").put("sdp", desc.description))
+            override fun onCreateSuccess(sdp: SessionDescription) {
+                peerConnection!!.setLocalDescription(noopSdpObserver(), sdp)
+                signaling.sendSignal(JSONObject().put("kind", "offer").put("sdp", sdp.description))
             }
             override fun onSetSuccess() {}
-            override fun onCreateFailure(p0: String?) {}
-            override fun onSetFailure(p0: String?) {}
+            override fun onCreateFailure(error: String) {}
+            override fun onSetFailure(error: String) {}
         }
         peerConnection!!.createOffer(observer, constraints)
     }
 
+    private fun noopSdpObserver(): SdpObserver = object : SdpObserver {
+        override fun onCreateSuccess(sdp: SessionDescription) {}
+        override fun onSetSuccess() {}
+        override fun onCreateFailure(error: String) {}
+        override fun onSetFailure(error: String) {}
+    }
+
     fun onRemoteSignal(payload: JSONObject) {
-        val noopObserver = object : SdpObserver {
-            override fun onCreateSuccess(p0: SessionDescription?) {}
-            override fun onSetSuccess() {}
-            override fun onCreateFailure(p0: String?) {}
-            override fun onSetFailure(p0: String?) {}
-        }
         when (payload.optString("kind")) {
             "answer" -> {
                 val desc = SessionDescription(SessionDescription.Type.ANSWER, payload.getString("sdp"))
-                peerConnection?.setRemoteDescription(noopObserver, desc)
+                peerConnection?.setRemoteDescription(noopSdpObserver(), desc)
             }
             "candidate" -> {
                 peerConnection?.addIceCandidate(
